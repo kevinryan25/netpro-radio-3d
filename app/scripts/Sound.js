@@ -55,7 +55,8 @@ export default class Sound {
         if (debug) this.debug = new Debug(this);
 
         // load
-        this._load(src, callback);
+        // Bypass this method
+        //this._load_and_play(src, callback);
 
         // update
         window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
@@ -64,31 +65,68 @@ export default class Sound {
 
     // load MP3
 
-    _load(src, callback) {
+    _load_and_play(src, callback) {
+        let bufferLength = this.analyserNode.fftSize;
+        let dataArray = new Float32Array(bufferLength);
+        let isAudioPlaying = () => {
+            this.analyserNode.getFloatTimeDomainData(dataArray);
+            for (var i = 0; i < bufferLength; i++)
+              if (dataArray[i] != 0) return true; 
+            return false;
+        }
+        
+        let load_loop = ()=>{
+            let audio = new Audio()
+            audio.crossOrigin = "anonymous"
 
-        if (src) {
+            let playHandler = ()=>{
+                console.log("OKOK")
+                audio.play()
+                const sourceAudio = this.ctx.createMediaElementSource(audio)
+                sourceAudio.connect(this.analyserNode)
 
-            this._isLoaded = false;
-            this._progress = 0;
+                callback();
+                /*if(isAudioPlaying()){
+                    console.log("Audio is playing, should call break callback")
+                    callback()
+                }else{
+                    console.log("Audio is not playing, reloop")
+                    load_loop()
+                }*/
+
+                audio.removeEventListener('canplaythrough', playHandler)
+            }
+            let errorHandler = (e)=>{
+                console.error('Error', e);
+                audio.removeEventListener('error', errorHandler)
+            }
+            audio.addEventListener('canplaythrough', playHandler, false)
+            audio.addEventListener('error', errorHandler)
+            audio.src = src
+        }
+        load_loop()
+        //if (src) {
+        //    this._isLoaded = false;
+        //    this._progress = 0;
 
             // Load asynchronously
-    		let request = new XMLHttpRequest();
-    		request.open("GET", src, true);
-    		request.responseType = "arraybuffer";
-            request.onprogress = (e) => {
-                this._progress = e.loaded / e.total;
-            };
-    		request.onload = () => {
-    			this.ctx.decodeAudioData(request.response, (buffer) => {
-                    this._buffer = buffer;
-                    this._isLoaded = true;
-                    if (callback) callback();
-    			}, function(e) {
-    				console.log(e);
-    			});
-    		};
-    		request.send();
-        }
+    	//	let request = new XMLHttpRequest();
+    	//	request.open("GET", src, true);
+    	//	request.responseType = "arraybuffer";
+        //    request.onprogress = (e) => {
+        //        this._progress = e.loaded / e.total;
+        //    };
+    	//	request.onload = () => {
+    	//		this.ctx.decodeAudioData(request.response, (buffer) => {
+        //            this._buffer = buffer;
+        //            this._isLoaded = true;
+        //            if (callback) callback();
+    	//		}, function(e) {
+    	//			console.log(e);
+    	//		});
+    	//	};
+    	//	request.send();
+        //}
     }
 
     get progress() {
@@ -112,11 +150,66 @@ export default class Sound {
         let elapseTime = this._pauseTime - this._startTime + offset;
         this._startTime = this.ctx.currentTime - elapseTime;
 
-        this.sourceNode = this.ctx.createBufferSource();
-        this.sourceNode.connect(this.analyserNode);
-        this.sourceNode.buffer = this._buffer;
-        this.sourceNode.start(0, elapseTime);
-        this.sourceNode.addEventListener('ended', this._onEnded, false);
+        //this.sourceNode = this.ctx.createBufferSource();
+        //this.sourceNode.connect(this.analyserNode);
+        //this.sourceNode.buffer = this._buffer;
+        //this.sourceNode.start(0, elapseTime);
+        //this.sourceNode.addEventListener('ended', this._onEnded, false);
+
+        /**
+         * 
+         *
+         */
+
+        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+
+        let bufferLength = this.analyserNode.fftSize;
+        let dataArray = new Float32Array(bufferLength);
+        let isAudioPlaying = () => {
+            this.analyserNode.getFloatTimeDomainData(dataArray);
+            for (var i = 0; i < bufferLength; i++) {
+              if (dataArray[i] != 0) return true;
+          
+            }
+            return false;
+        }
+    
+        const audio = new Audio();
+        audio.crossOrigin = 'anonymous'; // Useful to play hosted live stream with CORS enabled
+    
+        const sourceAudio = this.ctx.createMediaElementSource(audio);
+        //sourceAudio.connect(context.destination);
+        sourceAudio.connect(this.analyserNode);
+    
+        const playHandler = () => {
+            console.log("inside playHandler")
+            console.log(isAudioPlaying())
+            //audio.play();
+            setInterval(()=>{
+                console.log("OKOK")
+                audio.play()
+                console.log(isAudioPlaying())
+            }, 3000)
+            audio.removeEventListener('canplaythrough', playHandler);
+        };
+        const errorHandler = e => {
+            console.error('Error', e);
+            audio.removeEventListener('error', errorHandler);
+        };
+    
+        audio.addEventListener('canplaythrough', playHandler, false);
+        audio.addEventListener('error', errorHandler);
+    
+        console.log("OKOIt K")
+        audio.addEventListener('load', ()=>{
+            console.log("Audio loaded")
+        })
+        audio.src = 'https://radio.netpro.mg/esdes.mp3';
+        console.log(audio)
+        /**
+         * 
+         * 
+         */
     }
 
     pause() {

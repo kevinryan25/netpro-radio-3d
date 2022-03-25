@@ -113,17 +113,43 @@ export default class App {
     }
 
     importAudio() {
+        
+        let landingPage = document.getElementById('landing')
+        let loading = document.getElementById('loader')
+        let landingButton = document.getElementById('landingButton')
+        let controls = document.getElementById('controls')
 
-        this.audio = new Sound(music, null, null, () => {
-            console.log(this.audio.progress)
+        landingButton.classList.remove('hidden');
+        loading.classList.add('hidden');
 
-            if (playSound) {
-                let landingPage = document.getElementById('landing')
-                let loading = document.getElementById('loader')
-                let landingButton = document.getElementById('landingButton')
-                let controls = document.getElementById('controls')
+        this.audio = new Sound("https://radio.netpro.mg/esdes.mp3", null, null, ()=>{}, debug)
+        landingButton.addEventListener('click', ()=>{
+            landingButton.classList.add('hidden');
+            loading.classList.remove('hidden');
+            
+            this.audio._load_and_play("https://radio.netpro.mg/esdes.mp3", ()=>{
+                console.log("Loaded and played")
+                loading.classList.add('hidden')
+                controls.classList.remove('hidden');
+                landingPage.style.display = "none";
+            })
+        })
 
-                this.audio._load(music, () => {
+        //this.audio = new Sound(music, null, null, () => { // Appel de la fonction _load_and_play
+            //console.log(this.audio.progress)
+
+            //if (playSound) {
+                //let landingPage = document.getElementById('landing')
+                //let loading = document.getElementById('loader')
+                //let landingButton = document.getElementById('landingButton')
+                //let controls = document.getElementById('controls')
+                
+                //landingButton.classList.remove('hidden')
+                //loading.classList.add('hidden')
+
+
+                /*
+                this.audio._load_and_play(music, () => {
                     loading.classList.add('hidden');
                     landingButton.classList.remove('hidden');
                     
@@ -133,8 +159,9 @@ export default class App {
                         this.audio.play();
                     })
                 })
-            }
-        }, debug);
+                */
+            //}
+        //}, debug);
     }
 
     importControls() {
